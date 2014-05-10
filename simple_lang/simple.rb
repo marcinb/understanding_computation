@@ -3,18 +3,17 @@ module SimpleLang
     Machine.new(
       LessThan.new(
         Add.new(
-          Multiply.new(Number.new(2), Number.new(2)),
-          Multiply.new(Number.new(2), Number.new(2)),
+          Multiply.new(Variable.new(:x), Number.new(2)),
+          Multiply.new(Variable.new(:y), Number.new(2)),
         ),
         Multiply.new(Number.new(3), Number.new(4))
-      )
-    ).run
+      ), {x: Number.new(2), y: Number.new(1)}).run
 
   end
 
-  class Machine < Struct.new(:expression)
+  class Machine < Struct.new(:expression, :environment)
     def step
-      self.expression = expression.reduce
+      self.expression = expression.reduce(environment)
     end
 
     def run
@@ -31,7 +30,7 @@ module SimpleLang
       true
     end
 
-    def reduce
+    def reduce(expression)
       raise NotImplementedError
     end
   end
@@ -57,11 +56,11 @@ module SimpleLang
       "#{left} + #{right}"
     end
 
-    def reduce
+    def reduce(expression)
       if left.reductible?
-        Add.new(left.reduce, right)
+        Add.new(left.reduce(expression), right)
       elsif right.reductible?
-        Add.new(left, right.reduce)
+        Add.new(left, right.reduce(expression))
       else
         Number.new(left.value + right.value)
       end
@@ -75,11 +74,11 @@ module SimpleLang
       "#{left} * #{right}"
     end
 
-    def reduce
+    def reduce(expression)
       if left.reductible?
-        Multiply.new(left.reduce, right)
+        Multiply.new(left.reduce(expression), right)
       elsif right.reductible?
-        Multiply.new(left, right.reduce)
+        Multiply.new(left, right.reduce(expression))
       else
         Number.new(left.value * right.value)
       end
@@ -101,14 +100,26 @@ module SimpleLang
       "#{left} < #{right}"
     end
 
-    def reduce
+    def reduce(expression)
       if left.reductible?
-        LessThan.new(left.reduce, right)
+        LessThan.new(left.reduce(expression), right)
       elsif right.reductible?
-        LessThan.new(left, right.reduce)
+        LessThan.new(left, right.reduce(expression))
       else
         Boolean.new(left.value < right.value)
       end
+    end
+  end
+
+  class Variable < Struct.new(:name)
+    include Reductible
+
+    def to_s
+      "#{name}"
+    end
+
+    def reduce(environment)
+      environment[name]
     end
   end
 end

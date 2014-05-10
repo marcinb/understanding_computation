@@ -1,11 +1,15 @@
 module SimpleLang
   def self.test
     Machine.new(
-      Add.new(
-        Multiply.new(Number.new(2), Number.new(2)),
-        Multiply.new(Number.new(2), Number.new(2)),
+      LessThan.new(
+        Add.new(
+          Multiply.new(Number.new(2), Number.new(2)),
+          Multiply.new(Number.new(2), Number.new(2)),
+        ),
+        Multiply.new(Number.new(3), Number.new(4))
       )
     ).run
+
   end
 
   class Machine < Struct.new(:expression)
@@ -78,6 +82,32 @@ module SimpleLang
         Multiply.new(left, right.reduce)
       else
         Number.new(left.value * right.value)
+      end
+    end
+  end
+
+  class Boolean < Struct.new(:value)
+    include Irreductible
+
+    def to_s
+      value.to_s
+    end
+  end
+
+  class LessThan < Struct.new(:left, :right)
+    include Reductible
+
+    def to_s
+      "#{left} < #{right}"
+    end
+
+    def reduce
+      if left.reductible?
+        LessThan.new(left.reduce, right)
+      elsif right.reductible?
+        LessThan.new(left, right.reduce)
+      else
+        Boolean.new(left.value < right.value)
       end
     end
   end

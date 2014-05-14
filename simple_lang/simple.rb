@@ -30,7 +30,7 @@ module SimpleLang
       true
     end
 
-    def reduce(expression)
+    def reduce(environment)
       raise NotImplementedError
     end
   end
@@ -56,11 +56,11 @@ module SimpleLang
       "#{left} + #{right}"
     end
 
-    def reduce(expression)
+    def reduce(environment)
       if left.reductible?
-        Add.new(left.reduce(expression), right)
+        Add.new(left.reduce(environment), right)
       elsif right.reductible?
-        Add.new(left, right.reduce(expression))
+        Add.new(left, right.reduce(environment))
       else
         Number.new(left.value + right.value)
       end
@@ -74,11 +74,11 @@ module SimpleLang
       "#{left} * #{right}"
     end
 
-    def reduce(expression)
+    def reduce(environment)
       if left.reductible?
-        Multiply.new(left.reduce(expression), right)
+        Multiply.new(left.reduce(environment), right)
       elsif right.reductible?
-        Multiply.new(left, right.reduce(expression))
+        Multiply.new(left, right.reduce(environment))
       else
         Number.new(left.value * right.value)
       end
@@ -100,11 +100,11 @@ module SimpleLang
       "#{left} < #{right}"
     end
 
-    def reduce(expression)
+    def reduce(environment)
       if left.reductible?
-        LessThan.new(left.reduce(expression), right)
+        LessThan.new(left.reduce(environment), right)
       elsif right.reductible?
-        LessThan.new(left, right.reduce(expression))
+        LessThan.new(left, right.reduce(environment))
       else
         Boolean.new(left.value < right.value)
       end

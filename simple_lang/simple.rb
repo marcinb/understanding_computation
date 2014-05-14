@@ -1,15 +1,19 @@
 module SimpleLang
   def self.test
     Machine.new(
-      Sequence.new(
-        Assign.new(
-          :y,
-          Multiply.new(
-            Variable.new(:x),
-            Add.new(Number.new(2), Variable.new(:x))
-          )
+      If.new(
+        LessThan.new(Variable.new(:x), Number.new(3)),
+        Sequence.new(
+          Assign.new(
+            :y,
+            Multiply.new(
+              Variable.new(:x),
+              Add.new(Number.new(2), Variable.new(:x))
+            )
+          ),
+          Assign.new(:z, Number.new(5))
         ),
-        Assign.new(:z, Number.new(5))
+        DoNothing.new
       ),
       {x: Number.new(2)}
     ).run
@@ -174,6 +178,24 @@ module SimpleLang
       else
         reduced_first, reduced_environment = first.reduce(environment)
         [Sequence.new(reduced_first, second), reduced_environment]
+      end
+    end
+  end
+
+  class If < Struct.new(:condition, :consequence, :alternative)
+    include Reductible
+
+    def to_s
+      "if(#{condition}) #{consequence} else #{alternative}"
+    end
+
+    def reduce(environment)
+      if condition.reductible?
+        [If.new(condition.reduce(environment), consequence, alternative), environment]
+      elsif condition == Boolean.new(true)
+        [consequence, environment]
+      else
+        [alternative, environment]
       end
     end
   end

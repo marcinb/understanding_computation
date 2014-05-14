@@ -1,27 +1,33 @@
 module SimpleLang
   def self.test
     Machine.new(
-      LessThan.new(
-        Add.new(
-          Multiply.new(Variable.new(:x), Number.new(2)),
-          Multiply.new(Variable.new(:y), Number.new(2)),
-        ),
-        Multiply.new(Number.new(3), Number.new(4))
-      ), {x: Number.new(2), y: Number.new(1)}).run
-
+      Assign.new(
+        :y,
+        Multiply.new(
+          Variable.new(:x),
+          Add.new(Number.new(2), Variable.new(:x))
+        )
+      ),
+      {x: Number.new(2)}
+    ).run
   end
 
-  class Machine < Struct.new(:expression, :environment)
+  class Machine < Struct.new(:statement, :environment)
     def step
-      self.expression = expression.reduce(environment)
+      self.statement, self.environment = statement.reduce(environment)
     end
 
     def run
-      while expression.reductible?
-        puts expression
+      while statement.reductible?
+        log
         step
       end
-      puts expression
+      log
+    end
+
+    private
+    def log
+      puts "#{statement}, #{environment}"
     end
   end
 
@@ -122,6 +128,35 @@ module SimpleLang
       environment[name]
     end
   end
+
+  class DoNothing
+    include Irreductible
+
+    def to_s
+      "do-nothing"
+    end
+
+    def ==(other)
+      other.instance_of?(DoNothing)
+    end
+  end
+
+  class Assign < Struct.new(:name, :expression)
+    include Reductible
+
+    def to_s
+      "#{name} = #{expression}"
+    end
+
+    def reduce(environment)
+      if expression.reductible?
+        [Assign.new(name, expression.reduce(environment)), environment]
+      else
+        [DoNothing.new, environment.merge(name => expression)]
+      end
+    end
+  end
+
 end
 
 puts SimpleLang.test

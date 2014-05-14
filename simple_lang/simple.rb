@@ -1,12 +1,15 @@
 module SimpleLang
   def self.test
     Machine.new(
-      Assign.new(
-        :y,
-        Multiply.new(
-          Variable.new(:x),
-          Add.new(Number.new(2), Variable.new(:x))
-        )
+      Sequence.new(
+        Assign.new(
+          :y,
+          Multiply.new(
+            Variable.new(:x),
+            Add.new(Number.new(2), Variable.new(:x))
+          )
+        ),
+        Assign.new(:z, Number.new(5))
       ),
       {x: Number.new(2)}
     ).run
@@ -157,6 +160,23 @@ module SimpleLang
     end
   end
 
+  class Sequence < Struct.new(:first, :second)
+    include Reductible
+
+    def to_s
+      "#{first}; #{second}"
+    end
+
+    def reduce(environment)
+      case first
+      when DoNothing.new
+        [second, environment]
+      else
+        reduced_first, reduced_environment = first.reduce(environment)
+        [Sequence.new(reduced_first, second), reduced_environment]
+      end
+    end
+  end
 end
 
 puts SimpleLang.test
